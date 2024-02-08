@@ -144,8 +144,8 @@ func makeSplitTab(_ fyne.Window) fyne.CanvasObject {
 func makeSplitTab2(_ fyne.Window) fyne.CanvasObject {
 	left := container.NewAppTabs(
 		container.NewTabItem("Params", makeParamsWidget()),
-		container.NewTabItem("Headers", widget.NewLabel("Content of tab 2")),
-		container.NewTabItem("Auth", widget.NewLabel("Content of tab 3")),
+		container.NewTabItem("Headers", makeHeadersWidget()),
+		container.NewTabItem("Auth", makeAuthWidget()),
 		container.NewTabItem("Body", widget.NewLabel("Content of tab 3")),
 	)
 	// left.Wrapping = fyne.TextWrapWord
@@ -168,18 +168,110 @@ func makeTabLocationSelect(callback func(container.TabLocation)) *widget.Select 
 }
 
 func makeParamsWidget() fyne.CanvasObject {
-	// data := []string{
-	// 	"one",
-	// 	"two",
-	// }
+	data := []string{
+		"one",
+		"two",
+	}
+
+	paramName := widget.NewEntry()
+	paramName.PlaceHolder = "Name"
+	paramValue := widget.NewEntry()
+	paramValue.PlaceHolder = "Value"
 	return container.NewBorder(
-		container.NewVBox(
-			widget.NewEntry(),
-			widget.NewEntry(),
-			widget.NewButton("Add Param", func() {}),
+		// container.NewVBox(
+		// 	container.NewGridWithColumns(
+		// 		3,
+		// 		widget.NewEntry(),
+		// 		widget.NewEntry(),
+		// 		widget.NewButton("+", func() {}),
+		// 	), widget.NewSeparator(),
+		// ),
+		widget.NewButton("Add Param", func() {}),
+		nil,
+		nil,
+		nil,
+		widget.NewList(
+			func() int {
+				return len(data)
+			},
+			func() fyne.CanvasObject {
+				return container.NewGridWithColumns(
+					2,
+					paramName,
+					paramValue,
+				)
+			},
+			func(id widget.ListItemID, item fyne.CanvasObject) {},
 		),
+	)
+}
+
+func makeHeadersWidget() fyne.CanvasObject {
+	data := []string{
+		"one",
+		"two",
+	}
+
+	headerName := widget.NewEntry()
+	headerName.PlaceHolder = "Name"
+	headerValue := widget.NewEntry()
+	headerValue.PlaceHolder = "Value"
+	return container.NewBorder(
+		// container.NewVBox(
+		// 	container.NewGridWithColumns(
+		// 		3,
+		// 		widget.NewEntry(),
+		// 		widget.NewEntry(),
+		// 		widget.NewButton("+", func() {}),
+		// 	), widget.NewSeparator(),
+		// ),
+		widget.NewButton("Add Header", func() {}),
 		nil,
 		nil,
 		nil,
+		widget.NewList(
+			func() int {
+				return len(data)
+			},
+			func() fyne.CanvasObject {
+				return container.NewGridWithColumns(
+					2,
+					headerName,
+					headerValue,
+				)
+			},
+			func(id widget.ListItemID, item fyne.CanvasObject) {},
+		),
+	)
+}
+
+func makeAuthWidget() fyne.CanvasObject {
+
+	return container.NewBorder(
+		// container.NewVBox(
+		// 	container.NewGridWithColumns(
+		// 		3,
+		// 		widget.NewEntry(),
+		// 		widget.NewEntry(),
+		// 		widget.NewButton("+", func() {}),
+		// 	), widget.NewSeparator(),
+		// ),
+		widget.NewSelect([]string{}, func(s string) { fmt.Println("selected", s) }),
+		nil,
+		nil,
+		nil,
+		// widget.NewList(
+		// 	func() int {
+		// 		return len(data)
+		// 	},
+		// 	func() fyne.CanvasObject {
+		// 		return container.NewGridWithColumns(
+		// 			2,
+		// 			headerName,
+		// 			headerValue,
+		// 		)
+		// 	},
+		// 	func(id widget.ListItemID, item fyne.CanvasObject) {},
+		// ),
 	)
 }

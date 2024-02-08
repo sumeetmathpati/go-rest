@@ -3,38 +3,39 @@ package main
 import "errors"
 
 type Method int
-
-const (
-	get Method = iota
-	head
-	post
-	put
-	patch
-	delete
-	options
-)
+type Auth int
 
 var (
 	InvalidMethodErr = errors.New("Method is invalid")
+	methods          = []string{
+		"GET",
+		"HEAD",
+		"POST",
+		"PUT",
+		"PATCH",
+		"DELETE",
+		"OPTIONS",
+	}
 )
 
-func methodDisplay(method Method) (methodName string, err error) {
-	err = nil
-	switch method {
-	case get:
-		methodName = "GET"
-	case head:
-		methodName = "HEAD"
-	case post:
-		methodName = "POST"
-	case put:
-		methodName = "PUT"
-	case patch:
-		methodName = "PATCH"
-	case delete:
-		methodName = "DELETE"
-	case options:
-		methodName = "OPTIONS"
+const (
+	none Auth = iota
+	basic
+	bearer
+	key
+)
+
+func authDisplay(auth Auth) (authName string) {
+	authName = ""
+	switch auth {
+	case none:
+		authName = "None"
+	case basic:
+		authName = "Basic"
+	case bearer:
+		authName = "Bearer"
+	case key:
+		authName = "API Key"
 	}
 
 	return
