@@ -19,22 +19,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type NameValue struct {
-	Name  binding.String
-	Value binding.String
-}
-
-// Global State
-var str = binding.NewString()
-var params = binding.NewUntypedList()
-var selectedMethod string
-
-// State end
-
 var topWindow fyne.Window
 
 func main() {
-	params.Append(NameValue{})
+
 	a := app.NewWithID("io.fyne.demo")
 	a.SetIcon(data.FyneLogo)
 	// makeTray(a)
@@ -266,7 +254,7 @@ func shortcutFocused(s fyne.Shortcut, w fyne.Window) {
 func makeMainContent(_ fyne.Window) fyne.CanvasObject {
 	left := container.NewAppTabs(
 		container.NewTabItem("Params", makeParamsWidget()),
-		container.NewTabItem("Headers", makeHeadersWidget()),
+		// container.NewTabItem("Headers", makeHeadersWidget()),
 		container.NewTabItem("Auth", makeAuthWidget()),
 		container.NewTabItem("Body", widget.NewLabel("Content of tab 3")),
 	)
@@ -291,80 +279,74 @@ func makeTabLocationSelect(callback func(container.TabLocation)) *widget.Select 
 
 func makeParamsWidget() fyne.CanvasObject {
 
-	paramName := widget.NewEntry()
-	paramName.PlaceHolder = "Name"
-	paramValue := widget.NewEntry()
-	paramValue.PlaceHolder = "Value"
 	return container.NewBorder(
-		// container.NewVBox(
-		// 	container.NewGridWithColumns(
-		// 		3,
-		// 		widget.NewEntry(),
-		// 		widget.NewEntry(),
-		// 		widget.NewButton("+", func() {}),
-		// 	), widget.NewSeparator(),
-		// ),
-		widget.NewButton("Add Param", func() {}),
+		widget.NewButton("Add Param", func() {
+			params.Append(NameValue{
+				Name: binding.NewString(), Value: binding.NewString(),
+			})
+
+		}),
 		nil,
 		nil,
 		nil,
+
 		widget.NewListWithData(
 			params,
 			func() fyne.CanvasObject {
 				return container.NewGridWithColumns(
 					2,
-					paramName,
-					paramValue,
+					widget.NewEntry(),
+					widget.NewEntry(),
 				)
 			},
-			func(i binding.DataItem, item fyne.CanvasObject) {
-				fmt.Println(i)
-				// paramContainer := item.(*fyne.Container)
-				// paramContainer.Objects[0].(*widget.Entry).Bind(i.(NameValue).Name)
-
+			func(i binding.DataItem, o fyne.CanvasObject) {
+				v, _ := i.(binding.Untyped).Get()
+				container := o.(*fyne.Container)
+				container.Objects[0].(*widget.Entry).Bind(v.(NameValue).Name)
+				container.Objects[1].(*widget.Entry).Bind(v.(NameValue).Value)
 			},
 		),
 	)
 }
 
-func makeHeadersWidget() fyne.CanvasObject {
-	data := []string{
-		"one",
-		"two",
-	}
+// func makeHeadersWidget() fyne.CanvasObject {
+// 	// data := []NameValue{
+// 	// 	NameValue{Name: binding.NewString(), Value: binding.NewString()},
+// 	// 	NameValue{Name: binding.NewString(), Value: binding.NewString()},
+// 	// }
 
-	headerName := widget.NewEntry()
-	headerName.PlaceHolder = "Name"
-	headerValue := widget.NewEntry()
-	headerValue.PlaceHolder = "Value"
-	return container.NewBorder(
-		// container.NewVBox(
-		// 	container.NewGridWithColumns(
-		// 		3,
-		// 		widget.NewEntry(),
-		// 		widget.NewEntry(),
-		// 		widget.NewButton("+", func() {}),
-		// 	), widget.NewSeparator(),
-		// ),
-		widget.NewButton("Add Header", func() {}),
-		nil,
-		nil,
-		nil,
-		widget.NewList(
-			func() int {
-				return len(data)
-			},
-			func() fyne.CanvasObject {
-				return container.NewGridWithColumns(
-					2,
-					headerName,
-					headerValue,
-				)
-			},
-			func(id widget.ListItemID, item fyne.CanvasObject) {},
-		),
-	)
-}
+// 	return container.NewBorder(
+// 		// container.NewVBox(
+// 		// 	container.NewGridWithColumns(
+// 		// 		3,
+// 		// 		widget.NewEntry(),
+// 		// 		widget.NewEntry(),
+// 		// 		widget.NewButton("+", func() {}),
+// 		// 	), widget.NewSeparator(),
+// 		// ),
+// 		widget.NewButton("Add Header", func() {}),
+// 		nil,
+// 		nil,
+// 		nil,
+// 		widget.NewList(
+// 			func() int {
+// 				return len([data])
+// 			},
+// 			func() fyne.CanvasObject {
+// 				return container.NewGridWithColumns(
+// 					2,
+// 					widget.NewEntry(),
+// 					widget.NewEntry(),
+// 				)
+// 			},
+// 			func(id widget.ListItemID, item fyne.CanvasObject) {
+// 				container := item.(*fyne.Container)
+// 				container.Objects[0].(*widget.Entry).Bind(data[id].Name)
+// 				container.Objects[1].(*widget.Entry).Bind(data[id].Value)
+// 			},
+// 		),
+// 	)
+// }
 
 func makeAuthWidget() fyne.CanvasObject {
 
