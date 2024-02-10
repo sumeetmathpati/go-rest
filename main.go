@@ -4,8 +4,9 @@ package main
 import (
 	"fmt"
 	"gorest/data"
-	"gorest/tutorials"
+	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -37,14 +38,17 @@ func main() {
 	w.SetMaster()
 
 	urlAndContent := container.NewBorder(
-		container.NewVBox(makeUrlBox(), widget.NewSeparator()),
+		container.NewVBox(
+			makeUrlBox(),
+			widget.NewSeparator(),
+		),
 		nil,
 		nil,
 		nil,
 		makeMainContent(w),
 	)
 
-	navAndContentSplit := container.NewHSplit(makeNav(func(t tutorials.Tutorial) {}, true), urlAndContent)
+	navAndContentSplit := container.NewHSplit(makeNav(), urlAndContent)
 	navAndContentSplit.Offset = 0.2
 	w.SetContent(navAndContentSplit)
 	w.Resize(fyne.NewSize(640, 460))
@@ -158,20 +162,17 @@ func makeMenu(a fyne.App, w fyne.Window) *fyne.MainMenu {
 }
 
 func makeUrlBox() *fyne.Container {
-	name := widget.NewEntryWithData(inputUrl)
-	name.SetPlaceHolder("Request URL")
-
+	inputUrlEntry := widget.NewEntryWithData(inputUrl)
+	inputUrlEntry.SetPlaceHolder("Request URL")
+	inputUrlEntry.Validator = urlValidator
 	methodSelect := widget.NewSelect(methods, func(s string) {
 		selectedMethod = strings.TrimSpace(s)
 		fmt.Println(selectedMethod)
 	})
 	methodSelect.PlaceHolder = fmt.Sprintf("%-12s", methods[0])
 	return container.NewBorder(nil, nil, methodSelect, widget.NewButton("Send", func() {
-		values, _ := params.Get()
-		for _, v := range values {
-			fmt.Println(v.(NameValue).Name.Get())
-		}
-	}), name)
+		makeRequest()
+	}), inputUrlEntry)
 }
 
 func makeTray(a fyne.App) {
@@ -188,7 +189,7 @@ func makeTray(a fyne.App) {
 	}
 }
 
-func makeNav(setTutorial func(tutorial tutorials.Tutorial), loadPrevious bool) fyne.CanvasObject {
+func makeNav() fyne.CanvasObject {
 
 	tools := container.NewHBox(
 		widget.NewButtonWithIcon("", theme.NavigateBackIcon(), func() {}),
@@ -272,8 +273,8 @@ func makeMainContent(_ fyne.Window) fyne.CanvasObject {
 	)
 	// left.Wrapping = fyne.TextWrapWord
 	// left.SetText("Long text is looooooooooooooong")
-	right := widget.NewMultiLineEntry()
-	return container.NewHSplit(container.NewVScroll(left), right)
+	output = widget.NewMultiLineEntry()
+	return container.NewHSplit(container.NewVScroll(left), output)
 }
 
 func makeTabLocationSelect(callback func(container.TabLocation)) *widget.Select {
@@ -398,6 +399,29 @@ func makeAuthWidget() fyne.CanvasObject {
 	)
 }
 
-func open(path string) {
+func makeRequest() {
+	requestUrl, err := inputUrl.Get()
+	// requestUri, _ := uri.Parse(requestUrl)
+	// if requestUri.Scheme() == "" {
+	// 	requestUri.Scheme() = "http"
+	// }
 
+	log.Println("INFO: Request URL", requestUrl)
+	req, err := http.NewRequest(http.MethodGet, requestUrl, nil)
+
+	if err != nil {
+		fmt.Printf("client: could not create request: %s\n", err)
+		os.Exit(1)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Printf("client: could not create request: %s\n", err)
+		// os.Exit(1)
+		return
+	}
+	defer res.Body.Close()
+
+	stringBody, _ := io.ReadAll(res.Body)
+	output.Text = string(stringBody)
+	output.Refresh()
 }

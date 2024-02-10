@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/widget"
 	xwidget "fyne.io/x/fyne/widget"
 )
 
@@ -19,3 +20,4 @@ var headers = binding.NewUntypedList()
 var selectedMethod string
 var currentDir string = os.Getenv("HOME")
 var tree *xwidget.FileTree
+var output *widget.Entry
