@@ -7,6 +7,7 @@ import (
 	"gorest/tutorials"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -15,8 +16,10 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	xwidget "fyne.io/x/fyne/widget"
 )
 
 var topWindow fyne.Window
@@ -27,7 +30,7 @@ func main() {
 	a.SetIcon(data.FyneLogo)
 	// makeTray(a)
 	logLifecycle(a)
-	w := a.NewWindow("Fyne Demo")
+	w := a.NewWindow("Go Rest")
 	topWindow = w
 
 	w.SetMainMenu(makeMenu(a, w))
@@ -155,7 +158,7 @@ func makeMenu(a fyne.App, w fyne.Window) *fyne.MainMenu {
 }
 
 func makeUrlBox() *fyne.Container {
-	name := widget.NewEntryWithData(str)
+	name := widget.NewEntryWithData(inputUrl)
 	name.SetPlaceHolder("Request URL")
 
 	methodSelect := widget.NewSelect(methods, func(s string) {
@@ -163,7 +166,12 @@ func makeUrlBox() *fyne.Container {
 		fmt.Println(selectedMethod)
 	})
 	methodSelect.PlaceHolder = fmt.Sprintf("%-12s", methods[0])
-	return container.NewBorder(nil, nil, methodSelect, widget.NewButton("Send", func() {}), name)
+	return container.NewBorder(nil, nil, methodSelect, widget.NewButton("Send", func() {
+		values, _ := params.Get()
+		for _, v := range values {
+			fmt.Println(v.(NameValue).Name.Get())
+		}
+	}), name)
 }
 
 func makeTray(a fyne.App) {
@@ -181,60 +189,64 @@ func makeTray(a fyne.App) {
 }
 
 func makeNav(setTutorial func(tutorial tutorials.Tutorial), loadPrevious bool) fyne.CanvasObject {
-	a := fyne.CurrentApp()
 
-	// tree := &widget.Tree{
-	// 	ChildUIDs: func(uid string) []string {
-	// 		return tutorials.TutorialIndex[uid]
-	// 	},
-	// 	IsBranch: func(uid string) bool {
-	// 		children, ok := tutorials.TutorialIndex[uid]
-
-	// 		return ok && len(children) > 0
-	// 	},
-	// 	CreateNode: func(branch bool) fyne.CanvasObject {
-	// 		return widget.NewLabel("Collection Widgets")
-	// 	},
-	// 	UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-	// 		t, ok := tutorials.Tutorials[uid]
-	// 		if !ok {
-	// 			fyne.LogError("Missing tutorial panel: "+uid, nil)
-	// 			return
-	// 		}
-	// 		obj.(*widget.Label).SetText(t.Title)
-	// 		if unsupportedTutorial(t) {
-	// 			obj.(*widget.Label).TextStyle = fyne.TextStyle{Italic: true}
-	// 		} else {
-	// 			obj.(*widget.Label).TextStyle = fyne.TextStyle{}
-	// 		}
-	// 	},
-	// 	OnSelected: func(uid string) {
-	// 		if t, ok := tutorials.Tutorials[uid]; ok {
-	// 			if unsupportedTutorial(t) {
-	// 				return
-	// 			}
-	// 			a.Preferences().SetString(preferenceCurrentTutorial, uid)
-	// 			setTutorial(t)
-	// 		}
-	// 	},
-	// }
-
-	// if loadPrevious {
-	// 	currentPref := a.Preferences().StringWithFallback(preferenceCurrentTutorial, "welcome")
-	// 	tree.Select(currentPref)
-	// }
-
-	themes := container.NewGridWithColumns(2,
-		widget.NewButton("Dark", func() {
-			a.Settings().SetTheme(theme.DarkTheme())
-		}),
-		widget.NewButton("Light", func() {
-			a.Settings().SetTheme(theme.LightTheme())
-		}),
+	tools := container.NewHBox(
+		widget.NewButtonWithIcon("", theme.NavigateBackIcon(), func() {}),
+		widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {}),
+		widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {}),
 	)
 
-	// return container.NewBorder(nil, themes, nil, nil, tree)
-	return container.NewBorder(nil, themes, nil, nil, nil)
+	createFileBrowser()
+
+	return container.NewBorder(tools, nil, nil, nil, tree)
+}
+
+func createFileBrowser() {
+	tree = xwidget.NewFileTree(storage.NewFileURI(currentDir)) // Start from home directory
+	// tree.Filter = storage.NewExtensionFileFilter([]string{"*"})     // Filter files
+	tree.Sorter = func(u1, u2 fyne.URI) bool {
+		return u1.String() < u2.String() // Sort alphabetically
+	}
+	tree.OnSelected = func(uid widget.TreeNodeID) {
+		// trimmedPath := strings.TrimPrefix(uid, "file://")
+		// f, err := os.Stat(trimmedPath)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// if f.IsDir() {
+		// 	currentDir = trimmedPath
+		// 	tree.Root = currentDir
+		// } else {
+
+		// }
+		onFileSelect(uid)
+	}
+}
+
+func onFileSelect(path string) {
+	fmt.Println("Selected", path)
+	// 'path' will be a file URI, example, file://...
+	if isDir(path) {
+		tree.Root = path
+		tree.Refresh()
+	} else {
+
+	}
+}
+
+func goBack() {
+
+}
+func isDir(path string) bool {
+	trimmedPath := strings.TrimPrefix(path, "file://")
+	f, err := os.Stat(trimmedPath)
+	if err != nil {
+		panic(err)
+	}
+	if f.IsDir() {
+		return true
+	}
+	return false
 }
 
 func shortcutFocused(s fyne.Shortcut, w fyne.Window) {
@@ -254,7 +266,7 @@ func shortcutFocused(s fyne.Shortcut, w fyne.Window) {
 func makeMainContent(_ fyne.Window) fyne.CanvasObject {
 	left := container.NewAppTabs(
 		container.NewTabItem("Params", makeParamsWidget()),
-		// container.NewTabItem("Headers", makeHeadersWidget()),
+		container.NewTabItem("Headers", makeHeadersWidget()),
 		container.NewTabItem("Auth", makeAuthWidget()),
 		container.NewTabItem("Body", widget.NewLabel("Content of tab 3")),
 	)
@@ -293,10 +305,13 @@ func makeParamsWidget() fyne.CanvasObject {
 		widget.NewListWithData(
 			params,
 			func() fyne.CanvasObject {
+				paramName := widget.NewEntry()
+				paramName.PlaceHolder = "Name"
+				paramValue := widget.NewEntry()
+				paramValue.PlaceHolder = "Value"
 				return container.NewGridWithColumns(
-					2,
-					widget.NewEntry(),
-					widget.NewEntry(),
+					2, paramName,
+					paramValue,
 				)
 			},
 			func(i binding.DataItem, o fyne.CanvasObject) {
@@ -309,44 +324,42 @@ func makeParamsWidget() fyne.CanvasObject {
 	)
 }
 
-// func makeHeadersWidget() fyne.CanvasObject {
-// 	// data := []NameValue{
-// 	// 	NameValue{Name: binding.NewString(), Value: binding.NewString()},
-// 	// 	NameValue{Name: binding.NewString(), Value: binding.NewString()},
-// 	// }
+func makeHeadersWidget() fyne.CanvasObject {
 
-// 	return container.NewBorder(
-// 		// container.NewVBox(
-// 		// 	container.NewGridWithColumns(
-// 		// 		3,
-// 		// 		widget.NewEntry(),
-// 		// 		widget.NewEntry(),
-// 		// 		widget.NewButton("+", func() {}),
-// 		// 	), widget.NewSeparator(),
-// 		// ),
-// 		widget.NewButton("Add Header", func() {}),
-// 		nil,
-// 		nil,
-// 		nil,
-// 		widget.NewList(
-// 			func() int {
-// 				return len([data])
-// 			},
-// 			func() fyne.CanvasObject {
-// 				return container.NewGridWithColumns(
-// 					2,
-// 					widget.NewEntry(),
-// 					widget.NewEntry(),
-// 				)
-// 			},
-// 			func(id widget.ListItemID, item fyne.CanvasObject) {
-// 				container := item.(*fyne.Container)
-// 				container.Objects[0].(*widget.Entry).Bind(data[id].Name)
-// 				container.Objects[1].(*widget.Entry).Bind(data[id].Value)
-// 			},
-// 		),
-// 	)
-// }
+	return container.NewBorder(
+		widget.NewButton("Add Header", func() {
+			headers.Append(NameValue{
+				Name: binding.NewString(), Value: binding.NewString(),
+			})
+
+		}),
+		nil,
+		nil,
+		nil,
+
+		widget.NewListWithData(
+			headers,
+			func() fyne.CanvasObject {
+
+				headerName := widget.NewEntry()
+				headerName.PlaceHolder = "Name"
+				headerValue := widget.NewEntry()
+				headerValue.PlaceHolder = "Value"
+				return container.NewGridWithColumns(
+					2,
+					headerName,
+					headerValue,
+				)
+			},
+			func(i binding.DataItem, o fyne.CanvasObject) {
+				v, _ := i.(binding.Untyped).Get()
+				container := o.(*fyne.Container)
+				container.Objects[0].(*widget.Entry).Bind(v.(NameValue).Name)
+				container.Objects[1].(*widget.Entry).Bind(v.(NameValue).Value)
+			},
+		),
+	)
+}
 
 func makeAuthWidget() fyne.CanvasObject {
 
@@ -383,4 +396,8 @@ func makeAuthWidget() fyne.CanvasObject {
 		// 	func(id widget.ListItemID, item fyne.CanvasObject) {},
 		// ),
 	)
+}
+
+func open(path string) {
+
 }
