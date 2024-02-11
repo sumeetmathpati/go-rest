@@ -9,6 +9,7 @@ import (
 )
 
 type NameValue struct {
+	Id    string
 	Name  binding.String
 	Value binding.String
 }
