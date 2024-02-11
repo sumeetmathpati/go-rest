@@ -26,7 +26,6 @@ import (
 var topWindow fyne.Window
 
 func main() {
-
 	a := app.NewWithID("io.fyne.demo")
 	a.SetIcon(data.FyneLogo)
 	// makeTray(a)
@@ -162,9 +161,7 @@ func makeMenu(a fyne.App, w fyne.Window) *fyne.MainMenu {
 }
 
 func makeUrlBox() *fyne.Container {
-	inputUrlEntry := widget.NewEntryWithData(inputUrl)
-	inputUrlEntry.SetPlaceHolder("Request URL")
-	inputUrlEntry.Validator = urlValidator
+	inputUrlEntry := makeUrlEntry()
 	methodSelect := widget.NewSelect(methods, func(s string) {
 		selectedMethod = strings.TrimSpace(s)
 		fmt.Println(selectedMethod)
@@ -173,6 +170,14 @@ func makeUrlBox() *fyne.Container {
 	return container.NewBorder(nil, nil, methodSelect, widget.NewButton("Send", func() {
 		makeRequest()
 	}), inputUrlEntry)
+}
+
+func makeUrlEntry() fyne.Widget {
+	inputUrlEntry := widget.NewEntryWithData(inputUrl)
+	inputUrlEntry.SetPlaceHolder("Request URL")
+	inputUrlEntry.Validator = urlValidator
+	inputUrlEntry.OnChanged = onUrlChanged
+	return inputUrlEntry
 }
 
 func makeTray(a fyne.App) {
@@ -209,17 +214,6 @@ func createFileBrowser() {
 		return u1.String() < u2.String() // Sort alphabetically
 	}
 	tree.OnSelected = func(uid widget.TreeNodeID) {
-		// trimmedPath := strings.TrimPrefix(uid, "file://")
-		// f, err := os.Stat(trimmedPath)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// if f.IsDir() {
-		// 	currentDir = trimmedPath
-		// 	tree.Root = currentDir
-		// } else {
-
-		// }
 		onFileSelect(uid)
 	}
 }
@@ -235,9 +229,6 @@ func onFileSelect(path string) {
 	}
 }
 
-func goBack() {
-
-}
 func isDir(path string) bool {
 	trimmedPath := strings.TrimPrefix(path, "file://")
 	f, err := os.Stat(trimmedPath)
@@ -294,15 +285,17 @@ func makeParamsWidget() fyne.CanvasObject {
 
 	return container.NewBorder(
 		widget.NewButton("Add Param", func() {
+
 			params.Append(NameValue{
 				Name: binding.NewString(), Value: binding.NewString(),
 			})
+
+			onParamsChanged("")
 
 		}),
 		nil,
 		nil,
 		nil,
-
 		widget.NewListWithData(
 			params,
 			func() fyne.CanvasObject {
@@ -310,16 +303,29 @@ func makeParamsWidget() fyne.CanvasObject {
 				paramName.PlaceHolder = "Name"
 				paramValue := widget.NewEntry()
 				paramValue.PlaceHolder = "Value"
-				return container.NewGridWithColumns(
-					2, paramName,
-					paramValue,
-				)
+
+				return container.NewBorder(
+					nil,
+					nil,
+					nil,
+					widget.NewButtonWithIcon("", theme.NavigateBackIcon(), func() {}),
+					container.NewGridWithColumns(
+						2,
+						paramName,
+						paramValue,
+					))
+
 			},
 			func(i binding.DataItem, o fyne.CanvasObject) {
+				fmt.Println("Updating params")
 				v, _ := i.(binding.Untyped).Get()
-				container := o.(*fyne.Container)
+				containerBorder := o.(*fyne.Container)
+				container := containerBorder.Objects[0].(*fyne.Container)
 				container.Objects[0].(*widget.Entry).Bind(v.(NameValue).Name)
 				container.Objects[1].(*widget.Entry).Bind(v.(NameValue).Value)
+
+				container.Objects[0].(*widget.Entry).OnChanged = onParamsChanged
+				container.Objects[1].(*widget.Entry).OnChanged = onParamsChanged
 			},
 		),
 	)
