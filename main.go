@@ -23,8 +23,6 @@ import (
 	xwidget "fyne.io/x/fyne/widget"
 )
 
-var topWindow fyne.Window
-
 func main() {
 	a := app.NewWithID("io.fyne.demo")
 	a.SetIcon(data.FyneLogo)
@@ -175,7 +173,6 @@ func makeUrlBox() *fyne.Container {
 func makeUrlEntry() fyne.Widget {
 	inputUrlEntry := widget.NewEntryWithData(inputUrl)
 	inputUrlEntry.SetPlaceHolder("Request URL")
-	inputUrlEntry.Validator = urlValidator
 	inputUrlEntry.OnChanged = onUrlChanged
 	return inputUrlEntry
 }

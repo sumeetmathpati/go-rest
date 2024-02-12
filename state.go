@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 	xwidget "fyne.io/x/fyne/widget"
@@ -15,6 +16,7 @@ type NameValue struct {
 }
 
 var inputUrl = binding.NewString()
+var topWindow fyne.Window
 
 var params = binding.NewUntypedList()
 var headers = binding.NewUntypedList()
